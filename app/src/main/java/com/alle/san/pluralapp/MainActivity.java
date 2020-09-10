@@ -1,109 +1,62 @@
 package com.alle.san.pluralapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.viewpager.widget.ViewPager;
 
-import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
+import com.alle.san.pluralapp.adapters.TabPagerAdapter;
+import com.google.android.material.tabs.TabLayout;
 
-import static com.alle.san.pluralapp.Utils.Globals.LEADER_BASE_API;
-import static com.alle.san.pluralapp.Utils.Globals.LEARNING_LEADER_BASE;
-import static com.alle.san.pluralapp.Utils.Globals.RESULTS_ARRAY_LIST;
-import static com.alle.san.pluralapp.Utils.Globals.SKILL_IQ_LEADER_BASE;
+import static com.alle.san.pluralapp.Utils.Globals.LISTING_FRAGMENT_TAG;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "LeaderListActivity";
+
+    Button submit;
+    Toolbar myToolbar;
+    int container;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        myToolbar = findViewById(R.id.my_tool_bar);
+        container = R.id.fragment_container;
+        submit = findViewById(R.id.submit);
 
-        URL skillLeaderUrl = null;
-        URL learningLeaderUrl = null;
-        try {
-            skillLeaderUrl = new URL(LEADER_BASE_API + SKILL_IQ_LEADER_BASE);
-            learningLeaderUrl = new URL(LEADER_BASE_API + LEARNING_LEADER_BASE );
+        setSupportActionBar(myToolbar);
 
-        } catch (MalformedURLException e) {
-            Log.d(TAG, "doInBackground: the Url malfunctioned " +e.toString());
-        }
+        initListingFragment();
+        submitButton();
 
-        new BackgroundWork().execute(learningLeaderUrl, skillLeaderUrl);
+
+
+
+
     }
 
-    public class BackgroundWork extends AsyncTask<URL, Void, ArrayList<String>>{
-
-        @Override
-        protected ArrayList<String> doInBackground(URL... urls) {
-            ArrayList<String> results = new ArrayList<>();
-            URL learningLeadersUrl = urls[0];
-            Log.d(TAG, "\n doInBackground: learn leader url: "+learningLeadersUrl.toString());
-            URL skillIQLeadersUrl = urls[1];
-            Log.d(TAG, "\n doInBackground: skill leader url: "+skillIQLeadersUrl.toString());
-            HttpURLConnection connection = null;
-            InputStream stream;
-            Scanner scanner;
-            try {
-                connection = (HttpURLConnection) learningLeadersUrl.openConnection();
-                stream = connection.getInputStream();
-                scanner = new Scanner(stream);
-                scanner.useDelimiter("\\A");
-                if(scanner.hasNext()){
-                    results.add(scanner.next());
-                }
-            } catch (IOException e) {
-                Log.d(TAG, "doInBackground: the Url "+ learningLeadersUrl.toString() +" " +e.toString());
-            }finally {
-                if (connection!= null){
-                    connection.disconnect();
-                }
+    private void submitButton() {
+        submit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(MainActivity.this, "Submitted",Toast.LENGTH_LONG).show();
             }
-            try {
-                connection = (HttpURLConnection) skillIQLeadersUrl.openConnection();
-                stream = connection.getInputStream();
-                scanner = new Scanner(stream);
-                scanner.useDelimiter("\\A");
-                if(scanner.hasNext()){
-                    results.add(scanner.next());
-                }
-            } catch (IOException e) {
-                Log.d(TAG, "doInBackground: the Url "+ skillIQLeadersUrl.toString() +" " +e.toString());
-            }finally {
-                if (connection!= null){
-                    connection.disconnect();
-                }
-            }
-            Log.d(TAG, "doInBackground: \n"+ results.get(0)+"\n");
-            Log.d(TAG, "doInBackground: \n"+ results.get(1)+"\n");
-            return results;
-        }
-
-        @Override
-        protected void onPostExecute(final ArrayList<String> strings) {
-            new Timer().schedule(new TimerTask(){
-                @Override
-                public void run(){
-
-                    Intent intent = new Intent(MainActivity.this, LeaderListActivity.class);
-                    intent.putExtra(LEARNING_LEADER_BASE, strings.get(0));
-                    intent.putExtra(SKILL_IQ_LEADER_BASE, strings.get(1));
-                    startActivity(intent);
-                    overridePendingTransition(android.R.anim.fade_out,android.R.anim.fade_in);
-                    finish();
-                }
-            }, 3000);
-        }
+        });
     }
+
+    private void initListingFragment() {
+        ListingFragment listingFragment= new ListingFragment();
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.add(container, listingFragment, LISTING_FRAGMENT_TAG);
+        transaction.addToBackStack(LISTING_FRAGMENT_TAG);
+        transaction.commit();
+    }
+
+
 }
